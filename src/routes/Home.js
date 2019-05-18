@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { getSuggestion, searchPackage } from '../services'
-import { Input } from 'antd'
+import { Input, Row, Col } from 'antd'
 
 import './Home.less'
 
@@ -67,6 +67,7 @@ class Home extends Component {
       <div className="home-wrapper">
         <Search
           autoFocus
+          className="search-input"
           placeholder="Search packages..."
           enterButton="Search"
           size="large"
@@ -76,15 +77,18 @@ class Home extends Component {
           onSearch={this.handleSearch}
         />
 
-        <div>
-          {results && results[searchTerm] ? (
-            <ul>
-              {results[searchTerm].packages.map((item, index) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
+        <Row gutter={16}>
+          <Col span={12}>
+            {results && results[searchTerm] && (
+              <ul>
+                {results[searchTerm].packages.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            )}
+          </Col>
+          <Col span={12}>Suggestion:</Col>
+        </Row>
       </div>
     )
   }
