@@ -1,0 +1,40 @@
+.recent-list {
+  margin: 25px 0 0;
+  padding: 0;
+  list-style: none;
+
+  & li {
+    zoom: 1;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+
+    .list-text {
+      cursor: pointer;
+
+      &:hover {
+        color: #1890ff;
+        transition: color 0.3s;
+      }
+    }
+
+    & .list-index {
+      background-color: #f5f5f5;
+      border-radius: 20px;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 16px;
+      height: 20px;
+      line-height: 20px;
+      width: 20px;
+      text-align: center;
+      margin-top: 1.5px;
+
+      &.dark {
+        background-color: #314659;
+        color: #fff;
+      }
+    }
+  }
+}

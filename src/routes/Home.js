@@ -1,17 +1,62 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import { getSuggestion, searchPackage } from '../services'
-import { Input, Row, Col } from 'antd'
+import { Row, Col } from 'antd'
+import { getRecent, saveRecent } from '../utils'
+import { SearchInput, RecentSearch, List } from '../components'
 
 import './Home.less'
 
-const Search = Input.Search
+const getLessRecord = list => list.slice(0, 10)
+
+const RecordFoundDescription = num => (
+  <span className="record-found-text">{`${
+    num ? `${num} dependencies found.` : 'No dependencies found'
+  } `}</span>
+)
 
 class Home extends Component {
   state = {
+    recent: [],
     results: null,
-    searchKey: 'react',
+    searchKey: '',
     searchTerm: '',
-    isLoading: false,
+    fetching: false,
+    suggestion: [],
+  }
+
+  componentWillMount() {
+    const loadState = getRecent()
+
+    if (loadState) {
+      this.setState({ recent: loadState })
+    }
+  }
+
+  updateRecentSearch = searchTerm => {
+    const { recent: oldRecent } = this.state
+    let updatedRecent = []
+
+    if (!oldRecent.length) {
+      updatedRecent = [searchTerm]
+    } else {
+      let index = oldRecent.indexOf(searchTerm)
+
+      if (!index) {
+        return false
+      } else if (index === -1) {
+        updatedRecent = [searchTerm, ...oldRecent]
+      } else {
+        updatedRecent = oldRecent.splice(index, 1)
+        updatedRecent = [...updatedRecent, ...oldRecent]
+      }
+    }
+
+    this.setState(
+      () => {
+        return { recent: updatedRecent }
+      },
+      () => saveRecent(updatedRecent),
+    )
   }
 
   checkPackageSearchTerm(searchTerm) {
@@ -19,75 +64,101 @@ class Home extends Component {
     return !results || !results[searchTerm]
   }
 
-  handleChange = e => {
-    const { name, value } = e.target
+  handleSearch = value => {
+    console.log('here hey')
+    console.log({ value })
+    this.setState({ searchTerm: value })
 
-    this.setState({ [name]: value })
-  }
-
-  handleSearch = () => {
-    const { searchKey } = this.state
-
-    this.setState({ searchTerm: searchKey })
-
-    if (this.checkPackageSearchTerm(searchKey)) {
-      this.fetchPackage(searchKey)
+    if (this.checkPackageSearchTerm(value)) {
+      this.fetchPackage(value)
+    } else {
+      this.updateRecentSearch(value)
     }
   }
 
   fetchPackage = async searchKey => {
+    this.setState({ fetching: true })
+
     const result = await searchPackage(searchKey)
 
     if (result) {
       this.setPackage(result)
+    } else if (result == null) {
+      this.setNoDependency()
+    } else {
+      this.setState({ fetching: false })
     }
   }
 
-  setPackage = result => {
-    this.setState(prevState => {
-      return {
-        results: {
-          ...prevState.results,
-          [this.state.searchTerm]: {
-            packages: Object.keys(result),
-            packagesByName: result,
+  setNoDependency = () => {
+    this.setState(
+      prevState => {
+        return {
+          results: {
+            ...prevState.results,
+            [this.state.searchTerm]: {
+              packages: [],
+              packagesByName: {},
+            },
           },
-        },
-      }
-    })
+          fetching: false,
+        }
+      },
+      () => this.updateRecentSearch(this.state.searchTerm),
+    )
+  }
+
+  setPackage = result => {
+    this.setState(
+      prevState => {
+        return {
+          results: {
+            ...prevState.results,
+            [this.state.searchTerm]: {
+              packages: Object.keys(result),
+              packagesByName: result,
+            },
+          },
+          fetching: false,
+        }
+      },
+      () => this.updateRecentSearch(this.state.searchTerm),
+    )
   }
 
   render() {
-    const { results, searchTerm, searchKey } = this.state
+    const { results, searchTerm, fetching, recent } = this.state
 
-    console.log({ results, searchTerm })
-    console.log(results && Object.keys(results).reverse())
+    const packages =
+      results && results[searchTerm] && results[searchTerm].packages
+
+    const plength = packages ? packages.length : 0
+
+    console.log({ plength })
 
     return (
       <div className="home-wrapper">
-        <Search
-          autoFocus
-          className="search-input"
-          placeholder="Search packages..."
-          enterButton="Search"
-          size="large"
-          name="searchKey"
-          value={searchKey}
-          onChange={this.handleChange}
-          onSearch={this.handleSearch}
-        />
-
         <Row gutter={16}>
           <Col span={12}>
-            {results && results[searchTerm] && (
-              <ul>
-                {results[searchTerm].packages.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
+            <SearchInput
+              searched={searchTerm}
+              isLoading={fetching}
+              onSearch={this.handleSearch}
+            />
+
+            {packages && (
+              <Fragment>
+                <RecordFoundDescription num={plength} />
+                {plength > 0 && <List list={packages.sort()} />}
+              </Fragment>
             )}
           </Col>
-          <Col span={12}>Suggestion:</Col>
+          <Col span={12} className="recent-wrapper">
+            <RecentSearch
+              list={getLessRecord(recent)}
+              onSearch={this.handleSearch}
+            />
+          </Col>
         </Row>
       </div>
     )
