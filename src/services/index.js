@@ -1,6 +1,9 @@
 import axios from 'axios'
 import { message } from 'antd'
 
+const CancelToken = axios.CancelToken
+const source = CancelToken.source()
+
 const PATH_BASE = 'https://npm-registry-proxy.glitch.me'
 const PATH_SEARCH = '/search'
 const PATH_SUGGESTION = '/suggestions'
@@ -31,8 +34,8 @@ function handleError(error) {
     response: { status, data },
   } = error
 
-  if (status === 404) {
-    message.error(data, 3)
+  if (status !== 200) {
+    message.error(data.error, 3)
   }
 
   return false
@@ -40,7 +43,9 @@ function handleError(error) {
 
 export async function searchPackage(term) {
   return await axios
-    .get(`${PATH_BASE}/${term}${PATH_LATEST}`)
+    .get(`${PATH_BASE}/${term}${PATH_LATEST}`, {
+      cancelToken: source.token,
+    })
     .then(res => res.data)
     .then(await getDependencies)
     .catch(handleError)

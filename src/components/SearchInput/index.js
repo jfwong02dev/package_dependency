@@ -56,20 +56,32 @@ export default class SearchInput extends Component {
     this.setState({ [name]: value })
 
     if (value) {
+      this._fetch = true
       this.fetchSuggestion()
+    } else {
+      this.props.onClear()
     }
   }
 
   fetchSuggestion = debounce(async () => {
-    this.setState({ searching: true })
+    if (this._fetch) {
+      this.setState({ searching: true })
 
-    const result = await getSuggestion(this.state.searchKey)
-    if (result) {
-      this.setSuggestion(result)
-    } else {
-      this.setState({ searching: false })
+      const result = await getSuggestion(this.state.searchKey)
+      if (this._fetch) {
+        if (result) {
+          this.setSuggestion(result)
+        } else {
+          this.setState({ searching: false })
+        }
+      }
     }
   }, 800)
+
+  cancelFetchSuggestion = () => {
+    this._fetch = false
+    this.setState({ searching: false, suggestions: null })
+  }
 
   setSuggestion = result => {
     this.setState({
@@ -80,22 +92,28 @@ export default class SearchInput extends Component {
     })
   }
 
-  hanldeSubmit = () => {
-    this.props.onSearch(this.state.searchKey)
-    this.setState({ searchTerm: this.state.searchKey, suggestions: null })
+  handleSubmit = value => {
+    const searchKey = value || this.state.searchKey
+    this.cancelFetchSuggestion()
+    this.props.onSearch(searchKey)
+    this.setState({ searchKey, searchTerm: searchKey, suggestions: null })
   }
 
   render() {
     const { searchKey, searching, suggestions } = this.state
+    const visible = !!searchKey && (searching || !!suggestions)
 
     const menu = (
       <Menu>
-        {suggestions &&
+        {suggestions && suggestions.length > 0 ? (
           suggestions.map((name, index) => (
-            <Menu.Item key={index} onClick={this.hanldeSubmit}>
+            <Menu.Item key={index} onClick={() => this.handleSubmit(name)}>
               {name}
             </Menu.Item>
-          ))}
+          ))
+        ) : (
+          <Menu.Item disabled>'no record found'</Menu.Item>
+        )}
       </Menu>
     )
 
@@ -104,7 +122,7 @@ export default class SearchInput extends Component {
         <div id="area">
           <InputGroup compact>
             <Dropdown
-              visible={searchKey && (searching || !!suggestions)}
+              visible={visible}
               overlay={searching ? spin : menu}
               overlayStyle={{ width: 'calc(100% - 16px)' }}
               getPopupContainer={() => document.getElementById('area')}
@@ -126,7 +144,7 @@ export default class SearchInput extends Component {
               style={{
                 width: 100,
               }}
-              onClick={this.hanldeSubmit}
+              onClick={() => this.handleSubmit()}
             >
               Search
             </Button>

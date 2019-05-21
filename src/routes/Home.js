@@ -1,5 +1,5 @@
 import React, { Component, Fragment } from 'react'
-import { getSuggestion, searchPackage } from '../services'
+import { searchPackage } from '../services'
 import { Row, Col } from 'antd'
 import { getRecent, saveRecent } from '../utils'
 import { SearchInput, RecentSearch, List } from '../components'
@@ -8,7 +8,7 @@ import './Home.less'
 
 const getLessRecord = list => list.slice(0, 10)
 
-const RecordFoundDescription = num => (
+const RecordFoundDescription = ({ num }) => (
   <span className="record-found-text">{`${
     num ? `${num} dependencies found.` : 'No dependencies found'
   } `}</span>
@@ -29,6 +29,14 @@ class Home extends Component {
 
     if (loadState) {
       this.setState({ recent: loadState })
+    }
+  }
+
+  componentDidMount() {
+    const { packages } = this.props.match.params
+
+    if (packages) {
+      this.handleSearch(packages)
     }
   }
 
@@ -65,8 +73,6 @@ class Home extends Component {
   }
 
   handleSearch = value => {
-    console.log('here hey')
-    console.log({ value })
     this.setState({ searchTerm: value })
 
     if (this.checkPackageSearchTerm(value)) {
@@ -74,6 +80,10 @@ class Home extends Component {
     } else {
       this.updateRecentSearch(value)
     }
+  }
+
+  handleClear = () => {
+    this.setState({ searchTerm: null })
   }
 
   fetchPackage = async searchKey => {
@@ -130,20 +140,22 @@ class Home extends Component {
     const { results, searchTerm, fetching, recent } = this.state
 
     const packages =
-      results && results[searchTerm] && results[searchTerm].packages
+      searchTerm &&
+      results &&
+      results[searchTerm] &&
+      results[searchTerm].packages
 
     const plength = packages ? packages.length : 0
-
-    console.log({ plength })
 
     return (
       <div className="home-wrapper">
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={{ span: 24 }} lg={{ span: 12 }}>
             <SearchInput
               searched={searchTerm}
               isLoading={fetching}
               onSearch={this.handleSearch}
+              onClear={this.handleClear}
             />
 
             {packages && (
@@ -153,7 +165,7 @@ class Home extends Component {
               </Fragment>
             )}
           </Col>
-          <Col span={12} className="recent-wrapper">
+          <Col xs={{ span: 24 }} lg={{ span: 12 }} className="recent-wrapper">
             <RecentSearch
               list={getLessRecord(recent)}
               onSearch={this.handleSearch}

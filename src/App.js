@@ -1,9 +1,8 @@
 import React from 'react'
-import { BrowserRouter as Router, Route, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom'
 
 // Component
 import Home from './routes/Home'
-import PackageOverview from './routes/PackageOverview'
 
 import { Breadcrumb, Layout } from 'antd'
 
@@ -23,13 +22,13 @@ function App() {
             <Breadcrumb.Item>
               <Link to="/">Home</Link>
             </Breadcrumb.Item>
-            <Breadcrumb.Item>
-              <Link to="/package">PackageOverview</Link>
-            </Breadcrumb.Item>
+            <Breadcrumb.Item>PackageOverview</Breadcrumb.Item>
           </Breadcrumb>
           <div style={{ background: '#fff', padding: 24, minHeight: 280 }}>
-            <Route path="/" exact component={Home} />
-            <Route path="/package" component={PackageOverview} />
+            <Switch>
+              <Route path="/:packages" component={Home} />
+              <Route path="/" component={Home} />
+            </Switch>
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
