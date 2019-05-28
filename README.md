@@ -1,3 +1,2 @@
 clone this repo
-run `npm install`
-run `npm start`
+run `npm install` and run `npm start`
